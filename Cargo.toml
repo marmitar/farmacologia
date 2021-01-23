@@ -1,0 +1,18 @@
+[package]
+name = "hotmart_videos"
+version = "0.1.0"
+authors = ["tiagodepalves <tiagodepalves@gmail.com>"]
+edition = "2018"
+default-run = "cooked"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "hotmart"
+
+[dependencies]
+tempfile = "*"
+openssl = "*"
+hex = "*"
+reqwest = { version = "*", features = ["gzip", "trust-dns"] }
+tokio = { version = "*", features = ["full"] }
