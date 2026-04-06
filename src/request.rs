@@ -88,7 +88,7 @@ impl<'a> AsUrl for &'a str {
         match self.parse() {
             Ok(url) => url,
             Err(err) =>
-                panic!("Url parsing error for '{}' := {}", self, err)
+                panic!("Url parsing error for '{self}' := {err}")
         }
     }
 }

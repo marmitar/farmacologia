@@ -147,7 +147,7 @@ impl Playlist {
                         Some(i) => &info[i+1..],
                         None => "UNKNOWN"
                     };
-                    eprintln!("WARNING: Could not find URL for {}", resolution);
+                    eprintln!("WARNING: Could not find URL for {resolution}");
                     break ans
                 }
             };

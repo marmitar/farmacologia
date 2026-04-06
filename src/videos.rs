@@ -25,8 +25,8 @@ impl Dir {
     #[inline]
     pub fn path(&self) -> &Path {
         match self {
-            Self::Temp(ref dir) => dir.path(),
-            Self::Fix(ref path) => &path
+            Self::Temp(dir) => dir.path(),
+            Self::Fix(path) => &path
         }
     }
 
@@ -36,7 +36,7 @@ impl Dir {
 
         match create_dir_all(path) {
             Err(err) if err.kind() != AlreadyExists =>
-                panic!(err),
+                panic!("{err}"),
             _ => ()
         }
     }
@@ -145,7 +145,7 @@ impl Hls {
 
         for (i, handle) in handles.into_iter().enumerate() {
             if let Err(err) = handle.await {
-                panic!("Error at segment {}: {}", i, err)
+                panic!("Error at segment {i}: {err}")
             }
         }
     }

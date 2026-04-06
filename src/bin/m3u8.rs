@@ -29,7 +29,7 @@ async fn main() {
         task::spawn(async move {
             for (i, handle) in handles.into_iter().enumerate() {
                 if let Err(err) = handle.await {
-                    panic!("Error at segment {}: {}", i, err)
+                    panic!("Error at segment {i}: {err}")
                 }
             }
         })

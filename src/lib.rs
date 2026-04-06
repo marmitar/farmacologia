@@ -24,6 +24,7 @@ pub async fn ffmpeg(input: PathBuf, output: PathBuf) {
         .arg(output)
         .spawn()
         .unwrap()
+        .wait()
         .await
         .unwrap();
 
@@ -34,30 +35,19 @@ pub async fn ffmpeg(input: PathBuf, output: PathBuf) {
 
 
 mod cookies {
-    use std::sync::Once;
+    use std::sync::OnceLock;
     use tokio::fs;
 
-    static mut COOKIES: String = String::new();
-    static GUARD: Once = Once::new();
+    static COOKIES: OnceLock<String> = OnceLock::new();
 
     #[inline]
     pub fn set_cookies(cookies: String) {
-        unsafe {
-            GUARD.call_once(|| {
-                COOKIES = cookies;
-            })
-        }
+        COOKIES.set(cookies).unwrap();
     }
 
     #[inline]
     pub fn cookies() -> &'static str {
-        if !GUARD.is_completed() {
-            panic!("GLOBAL COOKIES UNSET")
-        }
-
-        unsafe {
-            &COOKIES
-        }
+        COOKIES.get().expect("GLOBAL COOKIES UNSET")
     }
 
     #[inline]
