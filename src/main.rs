@@ -1,9 +1,8 @@
-use hotmart::hotmart::{Playlist, Hotmart};
+use hotmart::hotmart::{Hotmart, Playlist};
 use hotmart::videos::Video;
 use hotmart::{ffmpeg, read_cookies_txt};
 
 use std::path::PathBuf;
-
 
 #[tokio::main]
 #[inline]
@@ -14,7 +13,7 @@ async fn main() {
     cookies.await;
     let playlist = match resolution {
         Some(resolution) => Playlist::get(&url, &resolution).await,
-        None => Playlist::get_max(&url).await
+        None => Playlist::get_max(&url).await,
     };
     let hotmart = Hotmart::get(playlist, &key).await;
     let video = Video::new(hotmart, tmpdir);

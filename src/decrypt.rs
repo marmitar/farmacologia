@@ -1,11 +1,9 @@
-use openssl::symm::{Crypter, Cipher, Mode::Decrypt};
-use openssl::base64;
 use hex::FromHex;
-
+use openssl::base64;
+use openssl::symm::{Cipher, Crypter, Mode::Decrypt};
 
 const BLOCK_SIZE: usize = 16;
 type BLOCK = [u8; BLOCK_SIZE];
-
 
 #[derive(Copy, Clone)]
 pub struct Decrypter {
@@ -35,7 +33,7 @@ impl Decrypter {
         assert_eq!(aes.key_len(), BLOCK_SIZE);
         assert_eq!(aes.iv_len(), Some(BLOCK_SIZE));
 
-        return Self { key, iv, aes }
+        return Self { key, iv, aes };
     }
 
     #[inline]

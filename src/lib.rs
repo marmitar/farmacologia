@@ -1,12 +1,11 @@
 pub mod decrypt;
-pub mod request;
 pub mod hotmart;
+pub mod request;
 pub mod videos;
-pub use cookies::{cookies, set_cookies, read_cookies_txt};
+pub use cookies::{cookies, read_cookies_txt, set_cookies};
 
-use tokio::process::Command;
 use std::path::PathBuf;
-
+use tokio::process::Command;
 
 #[inline]
 pub async fn ffmpeg(input: PathBuf, output: PathBuf) {
@@ -33,7 +32,6 @@ pub async fn ffmpeg(input: PathBuf, output: PathBuf) {
     }
 }
 
-
 mod cookies {
     use std::sync::OnceLock;
     use tokio::fs;
@@ -52,9 +50,8 @@ mod cookies {
 
     #[inline]
     pub async fn read_cookies_txt() {
-        let cookies = fs::read_to_string("cookies.txt").await
-            .expect("Missing 'cookies.txt'");
+        let cookies = fs::read_to_string("cookies.txt").await.expect("Missing 'cookies.txt'");
 
-            set_cookies(cookies)
+        set_cookies(cookies)
     }
 }

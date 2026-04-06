@@ -1,10 +1,9 @@
-use hotmart::hotmart::{Playlist, Hotmart};
+use hotmart::hotmart::{Hotmart, Playlist};
 use hotmart::videos::Video;
 use hotmart::{ffmpeg, set_cookies};
 
 use std::io::stdin;
 use std::path::PathBuf;
-
 
 #[tokio::main]
 #[inline]
@@ -31,7 +30,7 @@ fn args() -> (String, String, PathBuf) {
         (Some(url), Some(key), Some(video)) => {
             let path = std::env::current_dir().unwrap().join(video);
             (url, key, path)
-        },
+        }
         _ => {
             panic!("Not enough arguments\nUSAGE: cargo run URL KEY OUTPUT")
         }
@@ -46,7 +45,7 @@ fn read_cookies() {
 
     let cookies = match text.strip_prefix("Cookie: ") {
         Some(text) => text,
-        None => text
+        None => text,
     };
 
     set_cookies(String::from(cookies))

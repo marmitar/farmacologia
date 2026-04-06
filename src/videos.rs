@@ -1,13 +1,13 @@
 use crate::hotmart::Hotmart;
-use tempfile::TempDir;
 use std::path::{Path, PathBuf};
+use tempfile::TempDir;
 
-use tokio::{fs, task, try_join};
 use std::sync::Arc;
+use tokio::{fs, task, try_join};
 
 enum Dir {
     Temp(TempDir),
-    Fix(PathBuf)
+    Fix(PathBuf),
 }
 
 impl Dir {
@@ -26,7 +26,7 @@ impl Dir {
     pub fn path(&self) -> &Path {
         match self {
             Self::Temp(dir) => dir.path(),
-            Self::Fix(path) => &path
+            Self::Fix(path) => &path,
         }
     }
 
@@ -35,16 +35,15 @@ impl Dir {
         use std::io::ErrorKind::AlreadyExists;
 
         match create_dir_all(path) {
-            Err(err) if err.kind() != AlreadyExists =>
-                panic!("{err}"),
-            _ => ()
+            Err(err) if err.kind() != AlreadyExists => panic!("{err}"),
+            _ => (),
         }
     }
 }
 
 struct Hls {
     dir: Dir,
-    hotmart: Hotmart
+    hotmart: Hotmart,
 }
 
 impl Hls {
@@ -52,7 +51,7 @@ impl Hls {
     pub fn new(hotmart: Hotmart, dir: Option<&Path>) -> Self {
         let dir = match dir {
             Some(path) => Dir::fix(path),
-            None => Dir::temp()
+            None => Dir::temp(),
         };
         Self { dir, hotmart }
     }
@@ -61,11 +60,7 @@ impl Hls {
     async fn build_playlist(&self) -> PathBuf {
         let path = self.dir.path().join(Self::playlist());
 
-        let contents = [
-            Hotmart::start(),
-            self.hotmart.playlist_info(),
-            Self::video()
-        ];
+        let contents = [Hotmart::start(), self.hotmart.playlist_info(), Self::video()];
 
         fs::write(&path, contents.join("\n")).await.unwrap();
         path
@@ -75,7 +70,6 @@ impl Hls {
     fn build_segments(&self) -> Vec<String> {
         let segments = self.hotmart.segments();
         let mut segs = Vec::with_capacity(2 * segments.len());
-
 
         for (i, seg) in segments.iter().enumerate() {
             segs.push(seg.info.clone());
@@ -91,11 +85,7 @@ impl Hls {
         let info = self.hotmart.info().join("\n");
         let segs = self.build_segments().join("\n");
 
-        let contents = [
-            info.as_ref(),
-            segs.as_ref(),
-            Hotmart::end_list()
-        ];
+        let contents = [info.as_ref(), segs.as_ref(), Hotmart::end_list()];
 
         fs::write(path, contents.join("\n")).await.unwrap()
     }
@@ -105,12 +95,8 @@ impl Hls {
         let (first, second) = (self.clone(), self.clone());
 
         try_join!(
-            task::spawn(async move {
-                first.build_playlist().await
-            }),
-            task::spawn(async move {
-                second.build_video().await
-            }),
+            task::spawn(async move { first.build_playlist().await }),
+            task::spawn(async move { second.build_video().await }),
             task::spawn(async move {
                 let path = self.dir.path().join(Self::segments());
                 fs::create_dir(path).await.unwrap()
@@ -130,16 +116,16 @@ impl Hls {
 
     #[inline]
     pub async fn download(self: &Arc<Self>) {
-        let handles: Vec<_> = self.hotmart.segments()
+        let handles: Vec<_> = self
+            .hotmart
+            .segments()
             .iter()
             .enumerate()
             .map(|(i, ref seg)| {
                 let clone = self.clone();
                 let url = seg.url.clone();
 
-                task::spawn(async move {
-                    clone.download_segment(&url, i).await
-                })
+                task::spawn(async move { clone.download_segment(&url, i).await })
             })
             .collect();
 
@@ -168,7 +154,6 @@ impl Hls {
         format!("{}/{}.ts", segs, n)
     }
 }
-
 
 #[derive(Clone)]
 pub struct Video(Arc<Hls>);

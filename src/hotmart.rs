@@ -1,6 +1,5 @@
-use crate::request::Client;
 use crate::decrypt::Decrypter;
-
+use crate::request::Client;
 
 pub struct Hotmart {
     client: Client,
@@ -8,9 +7,8 @@ pub struct Hotmart {
 
     playlist: String,
     infos: Vec<String>,
-    urls: Vec<Segment>
+    urls: Vec<Segment>,
 }
-
 
 impl Hotmart {
     #[inline]
@@ -29,22 +27,17 @@ impl Hotmart {
                 if line.starts_with("#EXTINF") {
                     inf = Some(String::from(line));
                     segments = true
-
                 } else if line.starts_with("#EXT-X-KEY") {
                     crypto = Some(String::from(line))
-
                 } else {
                     info.push(String::from(line))
                 }
-
             } else if let Some(info) = inf {
                 let url = String::from(line);
-                urls.push(Segment {info, url});
+                urls.push(Segment { info, url });
                 inf = None
-
             } else if line.starts_with(Self::end_list()) {
-                break
-
+                break;
             } else {
                 inf = Some(String::from(line))
             }
@@ -63,7 +56,13 @@ impl Hotmart {
         let iv = crypto.split("IV=0x").nth(1).expect("Could not get IV from 'EXT-X-KEY'");
         let decrypter = Decrypter::new(key, iv);
 
-        Self { client, decrypter, infos, urls, playlist: info }
+        Self {
+            client,
+            decrypter,
+            infos,
+            urls,
+            playlist: info,
+        }
     }
 
     #[inline]
@@ -100,25 +99,23 @@ impl Hotmart {
     }
 }
 
-
 pub struct Segment {
     pub info: String,
-    pub url: String
+    pub url: String,
 }
-
 
 pub struct Playlist {
     client: Client,
     url: String,
-    info: String
+    info: String,
 }
 
 impl Playlist {
     #[inline]
     pub fn resolution(&self) -> String {
         String::from(match self.info.rfind('=') {
-            Some(i) => &self.info[i+1..],
-            None => "UNKNOWN"
+            Some(i) => &self.info[i + 1..],
+            None => "UNKNOWN",
         })
     }
 
@@ -134,21 +131,20 @@ impl Playlist {
 
         loop {
             let info = match iter.next() {
-                Some(info) if info.contains("RESOLUTION") =>
-                    String::from(info),
+                Some(info) if info.contains("RESOLUTION") => String::from(info),
                 Some(_) => continue,
-                None => break ans
+                None => break ans,
             };
 
             let url = match iter.next() {
                 Some(url) => String::from(url),
                 None => {
                     let resolution = match info.rfind('=') {
-                        Some(i) => &info[i+1..],
-                        None => "UNKNOWN"
+                        Some(i) => &info[i + 1..],
+                        None => "UNKNOWN",
                     };
                     eprintln!("WARNING: Could not find URL for {resolution}");
-                    break ans
+                    break ans;
                 }
             };
 
@@ -163,7 +159,7 @@ impl Playlist {
 
         for (info, url) in Self::get_playlists(text) {
             if info.contains(resolution) {
-                return Self { client, url, info }
+                return Self { client, url, info };
             }
         }
 
@@ -184,7 +180,7 @@ impl Playlist {
     }
 
     #[inline]
-    pub async fn get_all(url: &str) -> (String, impl Iterator<Item=Self>) {
+    pub async fn get_all(url: &str) -> (String, impl Iterator<Item = Self>) {
         let client = Client::new();
         let text = get_text(&client, url).await;
 
@@ -192,7 +188,8 @@ impl Playlist {
             .into_iter()
             .map(move |(info, url)| Self {
                 client: client.clone(),
-                url, info
+                url,
+                info,
             });
 
         (text, iter)
@@ -202,23 +199,19 @@ impl Playlist {
 #[inline]
 fn resolution(info: &str) -> usize {
     let res = match info.rfind('=') {
-        Some(i) => &info[i+1..],
-        None => return 0
+        Some(i) => &info[i + 1..],
+        None => return 0,
     };
 
-    let mut iter = res.split('x')
-        .filter_map(|s| s.parse::<usize>().ok());
+    let mut iter = res.split('x').filter_map(|s| s.parse::<usize>().ok());
 
     match (iter.next(), iter.next()) {
         (Some(w), Some(h)) => w * h,
-        _ => 0
+        _ => 0,
     }
 }
 
 #[inline]
 async fn get_text(client: &Client, url: &str) -> String {
-    client.request_media(url)
-        .await.unwrap()
-        .text()
-        .await.unwrap()
+    client.request_media(url).await.unwrap().text().await.unwrap()
 }
