@@ -4,13 +4,14 @@ use reqwest::{Client as Inner, Response, Result, Url};
 
 #[derive(Clone)]
 pub struct Client {
-    client: Inner,
+    inner: Inner,
     media: HeaderMap,
     segment: HeaderMap,
 }
 
 impl Client {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::with_cookies(cookies())
     }
@@ -31,7 +32,7 @@ impl Client {
             .gzip(true)
             .referer(false)
             .build()
-            .unwrap();
+            .expect("invalid HTTP client");
 
         let media = headers(&[(header::HOST, "player.hotmart.com"), (header::TE, "Trailers")]);
         let segment = headers(&[
@@ -39,12 +40,16 @@ impl Client {
             (header::ORIGIN, "https://player.hotmart.com"),
         ]);
 
-        Self { client, media, segment }
+        Self {
+            inner: client,
+            media,
+            segment,
+        }
     }
 
     #[inline]
     async fn request(&self, url: impl AsUrl, headers: &HeaderMap) -> Result<Response> {
-        let req = self.client.get(url.as_url());
+        let req = self.inner.get(url.to_url());
         req.headers(headers.clone()).send().await
     }
 
@@ -59,29 +64,35 @@ impl Client {
     }
 }
 
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[inline]
 fn headers<'a>(iter: impl IntoIterator<Item = &'a (HeaderName, &'a str)> + 'a) -> HeaderMap {
     iter.into_iter()
-        .map(|(name, value)| (name.clone(), HeaderValue::from_str(value).unwrap()))
+        .map(|(name, value)| (name.clone(), HeaderValue::from_str(value).expect("could not create HTTP header")))
         .collect()
 }
 
 pub trait AsUrl {
-    fn as_url(self) -> Url;
+    fn to_url(self) -> Url;
 }
 
 impl AsUrl for Url {
     #[inline]
-    fn as_url(self) -> Url {
+    fn to_url(self) -> Url {
         self
     }
 }
-impl<'a> AsUrl for &'a str {
+impl AsUrl for &str {
     #[inline]
-    fn as_url(self) -> Url {
+    fn to_url(self) -> Url {
         match self.parse() {
             Ok(url) => url,
-            Err(err) => panic!("Url parsing error for '{self}' := {err}"),
+            Err(err) => panic!("url parsing error for '{self}' := {err}"),
         }
     }
 }

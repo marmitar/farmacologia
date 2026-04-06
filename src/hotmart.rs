@@ -26,20 +26,20 @@ impl Hotmart {
             if !segments {
                 if line.starts_with("#EXTINF") {
                     inf = Some(String::from(line));
-                    segments = true
+                    segments = true;
                 } else if line.starts_with("#EXT-X-KEY") {
-                    crypto = Some(String::from(line))
+                    crypto = Some(String::from(line));
                 } else {
-                    info.push(String::from(line))
+                    info.push(String::from(line));
                 }
             } else if let Some(info) = inf {
                 let url = String::from(line);
                 urls.push(Segment { info, url });
-                inf = None
+                inf = None;
             } else if line.starts_with(Self::end_list()) {
                 break;
             } else {
-                inf = Some(String::from(line))
+                inf = Some(String::from(line));
             }
         }
 
@@ -66,34 +66,39 @@ impl Hotmart {
     }
 
     #[inline]
+    #[must_use]
     pub fn info(&self) -> &[String] {
         self.infos.as_ref()
     }
 
     #[inline]
+    #[must_use]
     pub fn segments(&self) -> &[Segment] {
         self.urls.as_ref()
     }
 
     #[inline]
-    pub fn start() -> &'static str {
+    #[must_use]
+    pub const fn start() -> &'static str {
         "#EXTM3U"
     }
 
     #[inline]
-    pub fn end_list() -> &'static str {
+    #[must_use]
+    pub const fn end_list() -> &'static str {
         "#EXT-X-ENDLIST"
     }
 
     #[inline]
+    #[must_use]
     pub fn playlist_info(&self) -> &str {
         self.playlist.as_ref()
     }
 
     #[inline]
     pub async fn request(&self, url: &str) -> Vec<u8> {
-        let resp = self.client.request_segment(url).await.unwrap();
-        let data = resp.bytes().await.unwrap();
+        let resp = self.client.request_segment(url).await.expect("failed to send request");
+        let data = resp.bytes().await.expect("failed to extract response");
 
         self.decrypter.decrypt(data.as_ref())
     }
@@ -112,11 +117,9 @@ pub struct Playlist {
 
 impl Playlist {
     #[inline]
+    #[must_use]
     pub fn resolution(&self) -> String {
-        String::from(match self.info.rfind('=') {
-            Some(i) => &self.info[i + 1..],
-            None => "UNKNOWN",
-        })
+        self.info.split_once('=').map_or("UNKNOWN", |(_, res)| res).into()
     }
 
     #[inline]
@@ -125,7 +128,7 @@ impl Playlist {
     }
 
     #[inline]
-    fn get_playlists(text: String) -> Vec<(String, String)> {
+    fn get_playlists(text: &str) -> Vec<(String, String)> {
         let mut iter = text.lines();
         let mut ans = Vec::new();
 
@@ -136,19 +139,13 @@ impl Playlist {
                 None => break ans,
             };
 
-            let url = match iter.next() {
-                Some(url) => String::from(url),
-                None => {
-                    let resolution = match info.rfind('=') {
-                        Some(i) => &info[i + 1..],
-                        None => "UNKNOWN",
-                    };
-                    eprintln!("WARNING: Could not find URL for {resolution}");
-                    break ans;
-                }
+            let Some(url) = iter.next().map(String::from) else {
+                let resolution = info.split_once('=').map_or("UNKNOWN", |(_, res)| res);
+                eprintln!("WARNING: Could not find URL for {resolution}");
+                break ans;
             };
 
-            ans.push((info, url))
+            ans.push((info, url));
         }
     }
 
@@ -157,13 +154,13 @@ impl Playlist {
         let client = Client::new();
         let text = get_text(&client, url).await;
 
-        for (info, url) in Self::get_playlists(text) {
+        for (info, url) in Self::get_playlists(&text) {
             if info.contains(resolution) {
                 return Self { client, url, info };
             }
         }
 
-        panic!("Could not find RESOLUTION={}", resolution)
+        panic!("Could not find RESOLUTION={resolution}")
     }
 
     #[inline]
@@ -171,7 +168,7 @@ impl Playlist {
         let client = Client::new();
         let text = get_text(&client, url).await;
 
-        let (info, url) = Self::get_playlists(text)
+        let (info, url) = Self::get_playlists(&text)
             .into_iter()
             .max_by_key(|(info, _)| resolution(info))
             .expect("No Playlist found");
@@ -184,13 +181,11 @@ impl Playlist {
         let client = Client::new();
         let text = get_text(&client, url).await;
 
-        let iter = Self::get_playlists(text.clone())
-            .into_iter()
-            .map(move |(info, url)| Self {
-                client: client.clone(),
-                url,
-                info,
-            });
+        let iter = Self::get_playlists(&text).into_iter().map(move |(info, url)| Self {
+            client: client.clone(),
+            url,
+            info,
+        });
 
         (text, iter)
     }
@@ -213,5 +208,11 @@ fn resolution(info: &str) -> usize {
 
 #[inline]
 async fn get_text(client: &Client, url: &str) -> String {
-    client.request_media(url).await.unwrap().text().await.unwrap()
+    client
+        .request_media(url)
+        .await
+        .expect("request failed")
+        .text()
+        .await
+        .expect("response failed")
 }

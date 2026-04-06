@@ -1,3 +1,10 @@
+#![allow(
+    clippy::missing_docs_in_private_items,
+    clippy::missing_panics_doc,
+    clippy::missing_errors_doc,
+    reason = "no documentation"
+)]
+
 use hotmart::hotmart::{Hotmart, Playlist};
 use hotmart::videos::Video;
 use hotmart::{ffmpeg, set_cookies};
@@ -19,7 +26,7 @@ async fn main() {
     let input = video.build().await;
     video.download().await;
 
-    ffmpeg(input, output).await
+    ffmpeg(input, output).await;
 }
 
 #[inline]
@@ -28,11 +35,11 @@ fn args() -> (String, String, PathBuf) {
 
     match (args.next(), args.next(), args.next()) {
         (Some(url), Some(key), Some(video)) => {
-            let path = std::env::current_dir().unwrap().join(video);
+            let path = std::env::current_dir().expect("no PWD").join(video);
             (url, key, path)
         }
         _ => {
-            panic!("Not enough arguments\nUSAGE: cargo run URL KEY OUTPUT")
+            panic!("not enough arguments\nUSAGE: cargo run URL KEY OUTPUT")
         }
     }
 }
@@ -40,13 +47,10 @@ fn args() -> (String, String, PathBuf) {
 #[inline]
 fn read_cookies() {
     let mut line = String::new();
-    stdin().read_line(&mut line).unwrap();
+    stdin().read_line(&mut line).expect("could not read cookies");
     let text = line.trim_end();
 
-    let cookies = match text.strip_prefix("Cookie: ") {
-        Some(text) => text,
-        None => text,
-    };
+    let cookies = text.strip_prefix("Cookie: ").unwrap_or(text);
 
-    set_cookies(String::from(cookies))
+    set_cookies(String::from(cookies));
 }

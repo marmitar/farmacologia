@@ -13,7 +13,7 @@ enum Dir {
 impl Dir {
     #[inline]
     pub fn temp() -> Self {
-        Self::Temp(TempDir::new().unwrap())
+        Self::Temp(TempDir::new().expect("failed to create temporary directory"))
     }
 
     #[inline]
@@ -26,7 +26,7 @@ impl Dir {
     pub fn path(&self) -> &Path {
         match self {
             Self::Temp(dir) => dir.path(),
-            Self::Fix(path) => &path,
+            Self::Fix(path) => path,
         }
     }
 
@@ -49,10 +49,7 @@ struct Hls {
 impl Hls {
     #[inline]
     pub fn new(hotmart: Hotmart, dir: Option<&Path>) -> Self {
-        let dir = match dir {
-            Some(path) => Dir::fix(path),
-            None => Dir::temp(),
-        };
+        let dir = dir.map_or_else(Dir::temp, Dir::fix);
         Self { dir, hotmart }
     }
 
@@ -62,7 +59,9 @@ impl Hls {
 
         let contents = [Hotmart::start(), self.hotmart.playlist_info(), Self::video()];
 
-        fs::write(&path, contents.join("\n")).await.unwrap();
+        fs::write(&path, contents.join("\n"))
+            .await
+            .expect("could not save playlist");
         path
     }
 
@@ -73,7 +72,7 @@ impl Hls {
 
         for (i, seg) in segments.iter().enumerate() {
             segs.push(seg.info.clone());
-            segs.push(Self::segment(i))
+            segs.push(Self::segment(i));
         }
         segs
     }
@@ -87,23 +86,25 @@ impl Hls {
 
         let contents = [info.as_ref(), segs.as_ref(), Hotmart::end_list()];
 
-        fs::write(path, contents.join("\n")).await.unwrap()
+        fs::write(path, contents.join("\n"))
+            .await
+            .expect("could not save video part");
     }
 
     #[inline]
     pub async fn build(self: Arc<Self>) -> PathBuf {
-        let (first, second) = (self.clone(), self.clone());
+        let (first, second) = (Arc::clone(&self), Arc::clone(&self));
 
         try_join!(
             task::spawn(async move { first.build_playlist().await }),
             task::spawn(async move { second.build_video().await }),
             task::spawn(async move {
                 let path = self.dir.path().join(Self::segments());
-                fs::create_dir(path).await.unwrap()
+                fs::create_dir(path).await.expect("failed to create output directory");
             })
         )
-        .map(|(path, _, _)| path)
-        .unwrap()
+        .map(|(path, (), ())| path)
+        .expect("failed to set up output directories")
     }
 
     #[inline]
@@ -111,23 +112,17 @@ impl Hls {
         let resp = self.hotmart.request(url).await;
 
         let path = self.dir.path().join(Self::segment(segment));
-        fs::write(path, resp).await.unwrap()
+        fs::write(path, resp).await.expect("failed to save segment");
     }
 
     #[inline]
     pub async fn download(self: &Arc<Self>) {
-        let handles: Vec<_> = self
-            .hotmart
-            .segments()
-            .iter()
-            .enumerate()
-            .map(|(i, ref seg)| {
-                let clone = self.clone();
-                let url = seg.url.clone();
+        let handles = self.hotmart.segments().iter().enumerate().map(|(i, seg)| {
+            let clone = Arc::clone(self);
+            let url = seg.url.clone();
 
-                task::spawn(async move { clone.download_segment(&url, i).await })
-            })
-            .collect();
+            task::spawn(async move { clone.download_segment(&url, i).await })
+        });
 
         for (i, handle) in handles.into_iter().enumerate() {
             if let Err(err) = handle.await {
@@ -137,21 +132,21 @@ impl Hls {
     }
 
     #[inline]
-    pub fn playlist() -> &'static str {
+    pub const fn playlist() -> &'static str {
         "playlist.m3u8"
     }
     #[inline]
-    pub fn video() -> &'static str {
+    pub const fn video() -> &'static str {
         "video.m3u8"
     }
     #[inline]
-    pub fn segments() -> &'static str {
+    pub const fn segments() -> &'static str {
         "segs"
     }
     #[inline]
     pub fn segment(n: usize) -> String {
         let segs = Self::segments();
-        format!("{}/{}.ts", segs, n)
+        format!("{segs}/{n}.ts")
     }
 }
 
@@ -160,17 +155,17 @@ pub struct Video(Arc<Hls>);
 
 impl Video {
     #[inline]
-    pub fn new(hotmart: Hotmart, dir: Option<String>) -> Self {
+    pub fn new(hotmart: Hotmart, dir: Option<&str>) -> Self {
         Self(Arc::new(Hls::new(hotmart, dir.as_ref().map(AsRef::as_ref))))
     }
 
     #[inline]
     pub async fn build(&self) -> PathBuf {
-        Hls::build(self.0.clone()).await
+        Hls::build(Arc::clone(&self.0)).await
     }
 
     #[inline]
     pub async fn download(&self) {
-        Hls::download(&self.0).await
+        Hls::download(&self.0).await;
     }
 }
