@@ -1,0 +1,4 @@
+$out_dir = 'build';
+$pdf_mode = 5; # XeLaTeX
+$synctex = 1;
+$xelatex = 'xelatex -shell-escape -interaction=nonstopmode -file-line-error %O %S';

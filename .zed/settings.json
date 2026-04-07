@@ -11,5 +11,14 @@
         },
       },
     },
+    "texlab": {
+      "settings": {
+        "texlab": {
+          "build": {
+            "onSave": true,
+          },
+        },
+      },
+    },
   },
 }

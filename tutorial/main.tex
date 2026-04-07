@@ -1,0 +1,94 @@
+\documentclass[a4paper, 11pt]{article}
+
+% \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+
+\usepackage{nameref}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+    pdftitle  = {Hotmart yt-dlp},
+    % pdfauthor = {Tiago de Paula},
+    % % bookmarks   = true,
+    % pdfpagemode = UseOutlines,
+    % %% Cores de Links %%
+    colorlinks = true,
+    linkcolor  = blue!30!black,
+    urlcolor   = red!30!black,
+    citecolor  = blue!30!black,
+}
+
+\usepackage[
+    a4paper,
+    headheight = 20pt,
+    margin = 1in,
+    top = \dimexpr 1in - 10pt \relax,
+    bottom = \dimexpr 1in - 20pt \relax,
+    footskip = 0pt,
+  ]{geometry}
+  \addtolength{\footskip}{20pt}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{trimspaces}
+\usepackage{xstring}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{pgf}
+\usepackage{tikz}
+\usepackage{minted}
+
+\usepackage{physics}
+\input{config/symbols}
+\input{config/theorems}
+\usepackage{mathpazo}
+\usepackage[mathpazo]{flexisym}
+\usepackage{breqn}
+
+\DeclareMathOperator{\EX}{\mathbb{E}}
+\newcommand*\Eval[3]{\left.#1\right\rvert_{#2}^{#3}}
+
+\begin{document}
+    \section{Instalação}
+
+    Para instalar o \href{https://github.com/yt-dlp/yt-dlp}{\texttt{yt-dlp}} no Windows 11, abra o \href{https://learn.microsoft.com/en-us/windows/terminal/}{Terminal} no modo \href{https://learn.microsoft.com/en-us/powershell/}{PowerShell} e execute:
+
+    \begin{minted}{powershell}
+        winget install -e --id yt-dlp.yt-dlp
+    \end{minted}
+
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{figures/01.png}
+    \end{center}
+
+    \section{Download}
+
+    Abra o vídeo desejado no \href{https://www.google.com.br/chrome/}{Google Chrome}, em seguida abra o \href{https://developer.chrome.com/docs/devtools}{Chrome DevTools} (\texttt{F12}) na aba \textit{Network} e pesquise por \texttt{m3u8}. Recarregue a página, espere o vídeo começar a carregar e copie a URL do arquivo \texttt{master-pkg-t-NNNNNNNNNNNNN.m3u8}, que será provavelmente o primeiro item da lista.
+
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{figures/02.png}
+    \end{center}
+
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{figures/03.png}
+    \end{center}
+
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{figures/04.png}
+    \end{center}
+
+    Por fim, abra o Terminal no modo PowerShell novamente e digite o seguinte, trocando \mintinline{bash}{%URL%} pela URL copiada do Chrome DevTools:
+
+    \begin{minted}[breaklines]{bash}
+        yt-dlp -f bestvideo+bestaudio/best --concurrent-fragments 2 --referer https://player.hotmart.com '%URL%'
+    \end{minted}
+
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{figures/05.png}
+    \end{center}
+\end{document}

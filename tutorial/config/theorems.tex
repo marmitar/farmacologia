@@ -1,0 +1,109 @@
+\usepackage{letltxmacro}
+\usepackage{enumitem, amsmath, amsthm}
+\usepackage[open]{bookmark}
+
+\makeatletter
+
+% problemas com o ambiente 'proof' do thmbox
+\LetLtxMacro\ams@proof\proof
+\LetLtxMacro\ams@end@proof\endproof
+
+\usepackage[nocut,nothm]{thmbox}
+\usepackage{thmtools}
+
+% \AtBeginDocument{%
+%     \LetLtxMacro\proof\ams@proof
+%     \LetLtxMacro\endproof\ams@end@proof
+% }
+
+% Marcador lateral para teoremas
+\newcommand*{\theorembookmark}{%
+    \bookmark[
+        dest = \@currentHref,
+        rellevel = 1,
+        keeplevel,
+    ]{%
+        \thmt@thmname\space\csname the\thmt@envname\endcsname
+    }%
+}
+
+
+%% Ajusta espaços para o Display Mode %%
+\newcommand{\reducemathskip}[1][0.5em]{%
+    \setlength{\abovedisplayskip}{#1}%
+    \setlength{\belowdisplayskip}{#1}%
+    % \setlength{\abovedisplayshortskip}{#1}%
+    % \setlength{\belowdisplayshortskip}{#1}%
+}
+
+%% Ambiente para Teoremas %%
+\declaretheoremstyle[
+    thmbox = M,
+    preheadhook = \vskip1.5em,
+    postheadhook = \theorembookmark\reducemathskip,
+]{teorema}
+
+\declaretheorem{theorem}[
+    name = Teorema,
+    % refname = {teorema,teoremas},
+    % Refname= {Teorema,Teoremas},
+    style = teorema,
+]
+\declaretheorem{lemma}[
+    name  = Lema,
+    style = teorema,
+]
+\declaretheorem{proposition}[
+    name  = Proposição,
+    style = teorema,
+]
+\declaretheorem{corollary}[
+    name  = Corolário,
+    style = teorema,
+]
+
+%% Ambiente para Definições %%
+\declaretheorem{definition}[
+    name = Definição,
+    refname = {definição,definições},
+    Refname= {Definição,Definições},
+    %
+    style = teorema,
+    postheadhook = \theorembookmark\reducemathskip,
+]
+% Sem numeração
+\declaretheorem{definition*}[
+    name = Definição,
+    refname = {definição,definições},
+    Refname= {Definição,Definições},
+    %
+    style = definition,
+    numbered = no,
+    postheadhook = \reducemathskip
+]
+
+%% Lista de Casos %%
+\newlist{casos}{enumerate}{2}
+\setlist[casos]{
+    wide,
+    labelwidth    = {\parindent},
+    listparindent = {\parindent},
+    parsep        = {\parskip},
+    topsep        = {0pt},
+    label         = {\textbf{Caso \arabic*}:}
+}
+% \setlist[casos,2]{label=\textbf{Caso \arabic{casosi}\alph*}:}
+
+%% Casos Nomeados: \item[Caso Base:] %%
+\newlist{ncasos}{description}{2}
+\setlist[ncasos]{
+    wide,
+    listparindent = {\parindent},
+    parsep        = {\parskip},
+    topsep        = {0pt}
+}
+
+\makeatother
+
+\usepackage{silence}
+\WarningFilter{mathptmx}{There are no bold math fonts}
